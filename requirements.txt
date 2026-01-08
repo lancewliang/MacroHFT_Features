@@ -1,0 +1,15 @@
+# MacroHFT Features - 因子计算库依赖
+
+# 核心依赖
+polars>=0.20.0          # 高性能数据处理框架，支持多核并行
+numpy>=1.24.0           # 数值计算
+pyarrow>=14.0.0         # Feather/Parquet格式支持
+
+# 测试依赖
+pytest>=7.4.0           # 单元测试框架
+pytest-cov>=4.1.0       # 测试覆盖率
+
+# 可选依赖（用于数据分析和可视化）
+pandas>=2.0.0           # 数据分析（如果需要与pandas交互）
+matplotlib>=3.7.0       # 数据可视化
+seaborn>=0.12.0         # 统计可视化
