@@ -99,11 +99,26 @@ def quick_start(data_path: str = None, output_path: str = 'output/factors_quick_
                           'klow' in f or 'ksft' in f]
 
     print(f"\n因子分类统计:")
-    print(f"  • 流动性因子: {len(liquidity_factors)}")
-    print(f"  • 波动性因子: {len(volatility_factors)}")
-    print(f"  • 趋势因子: {len(trend_factors)}")
-    print(f"  • 微观结构因子: {len(microstructure_factors)}")
-    print(f"  • K线形态因子: {len(candlestick_factors)}")
+
+    print(f"\n  • 流动性因子 ({len(liquidity_factors)}个):")
+    for i, factor in enumerate(liquidity_factors, 1):
+        print(f"    {i:2d}. {factor}")
+
+    print(f"\n  • 波动性因子 ({len(volatility_factors)}个):")
+    for i, factor in enumerate(volatility_factors, 1):
+        print(f"    {i:2d}. {factor}")
+
+    print(f"\n  • 趋势因子 ({len(trend_factors)}个):")
+    for i, factor in enumerate(trend_factors, 1):
+        print(f"    {i:2d}. {factor}")
+
+    print(f"\n  • 微观结构因子 ({len(microstructure_factors)}个):")
+    for i, factor in enumerate(microstructure_factors, 1):
+        print(f"    {i:2d}. {factor}")
+
+    print(f"\n  • K线形态因子 ({len(candlestick_factors)}个):")
+    for i, factor in enumerate(candlestick_factors, 1):
+        print(f"    {i:2d}. {factor}")
 
     # 数据质量检查
     print(f"\n数据质量:")
