@@ -188,10 +188,19 @@ class FactorCalculator:
 
         # 量价关系因子 - 滚动相关性
         # Rolling correlation between returns and volume
+        # Note: Polars doesn't have built-in rolling_corr, we compute it manually using rolling_map
         for window in [5, 10, 20]:
             df = df.with_columns([
-                pl.col('log_return_wap_1').rolling_corr(pl.col('volume'), window_size=window)
-                .alias(f'price_volume_corr_{window}')
+                # Compute rolling correlation using Pearson's formula
+                # corr = cov(x,y) / (std(x) * std(y))
+                (
+                    (
+                        (pl.col('log_return_wap_1') * pl.col('volume')).rolling_mean(window) -
+                        (pl.col('log_return_wap_1').rolling_mean(window) * pl.col('volume').rolling_mean(window))
+                    ) / (
+                        (pl.col('log_return_wap_1').rolling_std(window) * pl.col('volume').rolling_std(window)) + eps
+                    )
+                ).alias(f'price_volume_corr_{window}')
             ])
 
         return df
@@ -460,10 +469,11 @@ class FactorCalculator:
 
         # Linear Regression Slope and R²
         # 使用滚动窗口计算线性回归
-        for window in windows:
-            # 创建时间索引
+        # 创建时间索引 (only once, outside the loop)
+        if 'row_idx' not in df.columns:
             df = df.with_row_count('row_idx')
 
+        for window in windows:
             # 计算线性回归斜率 (简化版本: 使用相关系数 * std(y) / std(x))
             # 更精确的实现需要使用numpy或专门的回归库
             df = df.with_columns([
@@ -476,9 +486,16 @@ class FactorCalculator:
 
             # R² 计算 (简化版本: 使用滚动相关系数的平方)
             # 真实R²需要完整的线性回归计算
-            close_corr = pl.col('close').rolling_corr(pl.col('row_idx').cast(pl.Float64), window_size=window)
+            # Compute rolling correlation manually using Pearson's formula
             df = df.with_columns([
-                (close_corr ** 2).alias(f'r_squared_{window}')
+                (
+                    (
+                        (pl.col('close') * pl.col('row_idx').cast(pl.Float64)).rolling_mean(window) -
+                        (pl.col('close').rolling_mean(window) * pl.col('row_idx').cast(pl.Float64).rolling_mean(window))
+                    ) / (
+                        (pl.col('close').rolling_std(window) * pl.col('row_idx').cast(pl.Float64).rolling_std(window)) + eps
+                    )
+                ).pow(2).alias(f'r_squared_{window}')
             ])
 
         # ========== MACD因子 ==========
