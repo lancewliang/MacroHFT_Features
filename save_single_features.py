@@ -50,7 +50,7 @@ single_features = [
 ]
 
 # Save to numpy file
-np.save('single_features.npy', np.array(single_features))
+np.save('data/ETHUSDT/tmp/single_features.npy', np.array(single_features))
 
 print(f"Saved {len(single_features)} single feature names to single_features.npy")
 print(f"\nFeature breakdown:")
