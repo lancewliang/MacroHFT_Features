@@ -6,6 +6,14 @@ import numpy as np
 
 # Define all single feature column names (excluding trend features)
 single_features = [
+    # Raw OHLCV data (6 features)
+    'timestamp',
+    'open',
+    'high',
+    'low',
+    'close',
+    'volume',
+
     # Liquidity factors (17 features - removed trend-related volume features)
     'wap',
     'price_volume',
@@ -54,6 +62,7 @@ np.save('data/ETHUSDT/tmp/single_features.npy', np.array(single_features))
 
 print(f"Saved {len(single_features)} single feature names to single_features.npy")
 print(f"\nFeature breakdown:")
+print(f"  - Raw OHLCV data: 6")
 print(f"  - Liquidity factors: 15")
 print(f"  - Volatility factors: 7")
 print(f"  - Microstructure factors: 3")
