@@ -59,6 +59,9 @@ class FactorCalculator:
         if missing_cols:
             raise ValueError(f"缺少必需列: {missing_cols}")
 
+        # 只保留必需的列
+        self.df = self.df.select(required_cols)
+
         # 确保按时间排序
         self.df = self.df.sort('timestamp')
 
