@@ -33,6 +33,21 @@ agg_trade_id,price,quantity,first_trade_id,last_trade_id,transact_time,is_buyer_
 #### 挂单深度
 https://data.binance.vision/?prefix=data/futures/um/daily/bookDepth/ETHFIUSDT/ETHFIUSDT-bookDepth-2026-01-17.zip
 
+```
+timestamp	percentage	depth	notional
+2023/6/30 0:00	-5	894475	4872
+2023/6/30 0:00	-4	886610	4828
+2023/6/30 0:00	-3	870330	4738
+2023/6/30 0:00	-2	820210	4461
+2023/6/30 0:00	-1	532488	2892
+2023/6/30 0:00	1	523344	2815
+2023/6/30 0:00	2	877736	4693
+2023/6/30 0:00	3	989833	5285
+2023/6/30 0:00	4	1008206	5379
+2023/6/30 0:00	5	1015844	5417
+
+```
+
 #### 下载源
 * https://data.binance.vision
 * https://github.com/binance/binance-public-data
@@ -42,3 +57,22 @@ https://data.binance.vision/?prefix=data/futures/um/daily/bookDepth/ETHFIUSDT/ET
 #### api文档
 
 https://developers.binance.com/docs/zh-CN/derivatives/portfolio-margin-pro/portfolio-margin-pro-user-data-stream
+
+```
+如何正确在本地维护一个orderbook副本
+
+    订阅 wss://fstream.binance.com/stream?streams=btcusdt@depth
+    开始缓存收到的更新。同一个价位，后收到的更新覆盖前面的。
+    访问Rest接口 **https://fapi.binance.com/fapi/v1/depth?symbol=BTCUSDT&limit=1000**获得一个1000档的深度快照
+    将目前缓存到的信息中u< 步骤3中获取到的快照中的lastUpdateId的部分丢弃(丢弃更早的信息，已经过期)。
+    将深度快照中的内容更新到本地orderbook副本中，并从websocket接收到的第一个U <= ``lastUpdateId 且 u >= ``lastUpdateId 的event开始继续更新本地副本。
+
+    U = 来自 WebSocket 流的 firstUpdateId（第一个更新 ID）。
+    u = 来自 WebSocket 流的 finalUpdateId（最后一个更新 ID）。
+    lastUpdateId = 你从 REST 深度快照中获取的 更新 ID。
+
+    每一个新event的pu应该等于上一个event的u，否则可能出现了丢包，请从step3重新进行初始化。
+    每一个event中的挂单量代表这个价格目前的挂单量绝对值，而不是相对变化。
+    如果某个价格对应的挂单量为0，表示该价位的挂单已经撤单或者被吃，应该移除这个价位。
+
+```
