@@ -50,7 +50,7 @@ timestamp	percentage	depth	notional
 
 #### 下载源
 * https://data.binance.vision
-* https://github.com/binance/binance-public-data
+* https://github.com/binance/binance-public-data  代码仓库提供了下载代码
 
 币安的数据不能用于再hft中回测，是否可以用训练需要看一下
 
