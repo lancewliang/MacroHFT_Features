@@ -71,6 +71,6 @@ if __name__ == "__main__":
         PERIOD_START_DATE)
       dates = pd.date_range(end=datetime.today(), periods=period.days + 1).to_pydatetime().tolist()
       dates = [date.strftime("%Y-%m-%d") for date in dates]
-
+    print("dates: {}".format(dates))
     # Only support daily download for bookDepth
     download_daily_book_depth(args.type, symbols, num_symbols, dates, args.startDate, args.endDate, args.folder, args.checksum)
