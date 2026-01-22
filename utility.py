@@ -46,6 +46,7 @@ def download_file(base_path, file_name, date_range=None, folder=None):
 
   try:
     download_url = get_download_url(download_path)
+    print(download_url)
     dl_file = urllib.request.urlopen(download_url)
     length = dl_file.getheader('content-length')
     if length:
