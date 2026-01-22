@@ -55,7 +55,7 @@ def download_file(base_path, file_name, date_range=None, folder=None):
 
     with open(save_path, 'wb') as out_file:
       dl_progress = 0
-      print("\nFile Download: {}".format(save_path))
+      print("\nStart File Download: {}".format(save_path))
       while True:
         buf = dl_file.read(blocksize)   
         if not buf:
@@ -65,7 +65,8 @@ def download_file(base_path, file_name, date_range=None, folder=None):
         done = int(50 * dl_progress / length)
         sys.stdout.write("\r[%s%s]" % ('#' * done, '.' * (50-done)) )    
         sys.stdout.flush()
-
+      print("\nFile Download: {} complete!".format(save_path))
+      
   except urllib.error.HTTPError:
     print("\nFile not found: {}".format(download_url))
     pass

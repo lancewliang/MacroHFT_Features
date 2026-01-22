@@ -37,8 +37,11 @@ def download_monthly_trades(trading_type, symbols, num_symbols, years, months, s
 
   for symbol in symbols:
     print("[{}/{}] - start download monthly {} trades ".format(current+1, num_symbols, symbol))
+    
     for year in years:
+      print("year: {}".format(year))
       for month in months:
+        print("month: {}".format(month))
         current_date = convert_to_date_object('{}-{}-01'.format(year, month))
         if current_date >= start_date and current_date <= end_date:
           path = get_path(trading_type, "trades", "monthly", symbol)
