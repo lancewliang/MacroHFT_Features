@@ -1,0 +1,1 @@
+python3 download-trade.py -t um -s ETHUSDT -y 2023 -m 01 12 -c 1
