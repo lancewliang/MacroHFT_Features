@@ -145,7 +145,7 @@ def download_file(base_path, file_name, date_range=None, folder=None, checksum_f
       if attempt < max_retries - 1:
         print("\nDownload failed with HTTP error {} (attempt {}/{}): {}".format(e.code, attempt + 1, max_retries, download_url))
         print("Retrying in 2 seconds...")
-        time.sleep(2)
+        time_module.sleep(2)
       else:
         print("\nFile download failed after {} attempts: {}".format(max_retries, download_url))
 
@@ -157,7 +157,7 @@ def download_file(base_path, file_name, date_range=None, folder=None, checksum_f
       if attempt < max_retries - 1:
         print("\nDownload error (attempt {}/{}): {}".format(attempt + 1, max_retries, str(e)))
         print("Retrying in 2 seconds...")
-        time.sleep(2)
+        time_module.sleep(2)
       else:
         print("\nFile download failed after {} attempts: {}".format(max_retries, str(e)))
 
