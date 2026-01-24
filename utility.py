@@ -1,7 +1,9 @@
 import os, sys, re, shutil
 import json
+import hashlib
 from pathlib import Path
 from datetime import *
+import time as time_module
 import urllib.request
 from argparse import ArgumentParser, RawTextHelpFormatter, ArgumentTypeError
 from enums import *
@@ -17,6 +19,40 @@ def get_destination_dir(file_url, folder=None):
 def get_download_url(file_url):
   return "{}{}".format(BASE_URL, file_url)
 
+def calculate_sha256(file_path):
+  """Calculate SHA256 hash of a file"""
+  sha256_hash = hashlib.sha256()
+  with open(file_path, "rb") as f:
+    for byte_block in iter(lambda: f.read(4096), b""):
+      sha256_hash.update(byte_block)
+  return sha256_hash.hexdigest()
+
+def verify_checksum(file_path, checksum_file_path):
+  """Verify file integrity using checksum file"""
+  if not os.path.exists(checksum_file_path):
+    print("\nChecksum file not found: {}".format(checksum_file_path))
+    return False
+
+  try:
+    # Read expected checksum from file
+    with open(checksum_file_path, 'r') as f:
+      expected_checksum = f.read().strip().split()[0]  # Get first token (hash value)
+
+    # Calculate actual checksum
+    actual_checksum = calculate_sha256(file_path)
+
+    if actual_checksum.lower() == expected_checksum.lower():
+      print("\nChecksum verification passed: {}".format(file_path))
+      return True
+    else:
+      print("\nChecksum verification FAILED: {}".format(file_path))
+      print("Expected: {}".format(expected_checksum))
+      print("Actual: {}".format(actual_checksum))
+      return False
+  except Exception as e:
+    print("\nChecksum verification error: {}".format(str(e)))
+    return False
+
 def get_all_symbols(type):
   if type == 'um':
     response = urllib.request.urlopen("https://fapi.binance.com/fapi/v1/exchangeInfo").read()
@@ -26,7 +62,7 @@ def get_all_symbols(type):
     response = urllib.request.urlopen("https://api.binance.com/api/v3/exchangeInfo").read()
   return list(map(lambda symbol: symbol['symbol'], json.loads(response)['symbols']))
 
-def download_file(base_path, file_name, date_range=None, folder=None):
+def download_file(base_path, file_name, date_range=None, folder=None, checksum_file_path=None):
   download_path = "{}{}".format(base_path, file_name)
   if folder:
     base_path = os.path.join(folder, base_path)
@@ -34,42 +70,102 @@ def download_file(base_path, file_name, date_range=None, folder=None):
     date_range = date_range.replace(" ","_")
     base_path = os.path.join(base_path, date_range)
   save_path = get_destination_dir(os.path.join(base_path, file_name), folder)
-  
+
 
   if os.path.exists(save_path):
-    print("\nfile already exists! {}".format(save_path))
-    return
-  
+    # If checksum verification is enabled, verify existing file
+    if checksum_file_path and os.path.exists(checksum_file_path):
+      if verify_checksum(save_path, checksum_file_path):
+        print("\nfile already exists and verified! {}".format(save_path))
+        return True
+      else:
+        print("\nExisting file failed checksum verification, re-downloading...")
+        os.remove(save_path)
+    else:
+      print("\nfile already exists! {}".format(save_path))
+      return True
+
   # make the directory
   if not os.path.exists(base_path):
     Path(get_destination_dir(base_path)).mkdir(parents=True, exist_ok=True)
 
-  try:
-    download_url = get_download_url(download_path)
-    print(download_url)
-    dl_file = urllib.request.urlopen(download_url)
-    length = dl_file.getheader('content-length')
-    if length:
-      length = int(length)
-      blocksize = max(4096,length//100)
+  download_url = get_download_url(download_path)
+  max_retries = 3
 
-    with open(save_path, 'wb') as out_file:
-      dl_progress = 0
-      print("\nStart File Download: {}".format(save_path))
-      while True:
-        buf = dl_file.read(blocksize)   
-        if not buf:
-          break
-        dl_progress += len(buf)
-        out_file.write(buf)
-        done = int(50 * dl_progress / length)
-        sys.stdout.write("\r[%s%s]" % ('#' * done, '.' * (50-done)) )    
-        sys.stdout.flush()
-      print("\nFile Download: {} complete!".format(save_path))
-      
-  except urllib.error.HTTPError:
-    print("\nFile not found: {}".format(download_url))
-    pass
+  for attempt in range(max_retries):
+    try:
+      print(download_url)
+      dl_file = urllib.request.urlopen(download_url)
+      length = dl_file.getheader('content-length')
+      if length:
+        length = int(length)
+        blocksize = max(4096,length//100)
+
+      with open(save_path, 'wb') as out_file:
+        dl_progress = 0
+        print("\nStart File Download: {}".format(save_path))
+        while True:
+          buf = dl_file.read(blocksize)
+          if not buf:
+            break
+          dl_progress += len(buf)
+          out_file.write(buf)
+          done = int(50 * dl_progress / length)
+          sys.stdout.write("\r[%s%s]" % ('#' * done, '.' * (50-done)) )
+          sys.stdout.flush()
+        print("\nFile Download: {} complete!".format(save_path))
+
+      # Verify checksum if provided
+      if checksum_file_path and os.path.exists(checksum_file_path):
+        if not verify_checksum(save_path, checksum_file_path):
+          # Checksum verification failed
+          if os.path.exists(save_path):
+            os.remove(save_path)
+          if attempt < max_retries - 1:
+            print("Retrying download due to checksum mismatch...")
+            time_module.sleep(2)
+            continue
+          else:
+            print("\nFile download failed after {} attempts due to checksum mismatch".format(max_retries))
+            return False
+
+      # Download successful, break out of retry loop
+      return True
+
+    except urllib.error.HTTPError as e:
+      # Don't retry if file not found (404 error)
+      if e.code == 404:
+        print("\nFile not found: {}".format(download_url))
+        # Clean up partial download if exists
+        if os.path.exists(save_path):
+          os.remove(save_path)
+        return False
+
+      # Retry for other HTTP errors (5xx server errors, etc.)
+      if attempt < max_retries - 1:
+        print("\nDownload failed with HTTP error {} (attempt {}/{}): {}".format(e.code, attempt + 1, max_retries, download_url))
+        print("Retrying in 2 seconds...")
+        time.sleep(2)
+      else:
+        print("\nFile download failed after {} attempts: {}".format(max_retries, download_url))
+
+      # Clean up partial download if exists
+      if os.path.exists(save_path):
+        os.remove(save_path)
+
+    except Exception as e:
+      if attempt < max_retries - 1:
+        print("\nDownload error (attempt {}/{}): {}".format(attempt + 1, max_retries, str(e)))
+        print("Retrying in 2 seconds...")
+        time.sleep(2)
+      else:
+        print("\nFile download failed after {} attempts: {}".format(max_retries, str(e)))
+
+      # Clean up partial download if exists
+      if os.path.exists(save_path):
+        os.remove(save_path)
+
+  return False
 
 def convert_to_date_object(d):
   year, month, day = [int(x) for x in d.split('-')]

@@ -37,7 +37,7 @@ def download_monthly_trades(trading_type, symbols, num_symbols, years, months, s
 
   for symbol in symbols:
     print("[{}/{}] - start download monthly {} trades ".format(current+1, num_symbols, symbol))
-    
+
     for year in years:
       print("year: {}".format(year))
       for month in months:
@@ -46,13 +46,46 @@ def download_monthly_trades(trading_type, symbols, num_symbols, years, months, s
         if current_date >= start_date and current_date <= end_date:
           path = get_path(trading_type, "trades", "monthly", symbol)
           file_name = "{}-trades-{}-{}.zip".format(symbol.upper(), year, '{:02d}'.format(month))
-          download_file(path, file_name, date_range, folder)
 
+          checksum_file_path = None
+
+          # If checksum verification is enabled, download checksum file first
           if checksum == 1:
             checksum_path = get_path(trading_type, "trades", "monthly", symbol)
             checksum_file_name = "{}-trades-{}-{}.zip.CHECKSUM".format(symbol.upper(), year, '{:02d}'.format(month))
-            download_file(checksum_path, checksum_file_name, date_range, folder)
-    
+
+            # Download checksum file
+            checksum_success = download_file(checksum_path, checksum_file_name, date_range, folder)
+
+            if checksum_success:
+              # Build the full path to the checksum file
+              import os
+              base_path = checksum_path
+              if folder:
+                base_path = os.path.join(folder, base_path)
+              if date_range:
+                date_range_str = date_range.replace(" ", "_")
+                base_path = os.path.join(base_path, date_range_str)
+              from utility import get_destination_dir
+              checksum_file_path = get_destination_dir(os.path.join(base_path, checksum_file_name), folder)
+
+              # Verify checksum file is valid (should contain SHA256 hash)
+              if os.path.exists(checksum_file_path):
+                try:
+                  with open(checksum_file_path, 'r') as f:
+                    checksum_content = f.read().strip()
+                    # Basic validation: SHA256 hash should be 64 hex characters
+                    hash_value = checksum_content.split()[0]
+                    if len(hash_value) != 64 or not all(c in '0123456789abcdefABCDEF' for c in hash_value):
+                      print("\nWarning: Checksum file appears to be invalid: {}".format(checksum_file_path))
+                      checksum_file_path = None
+                except Exception as e:
+                  print("\nWarning: Failed to validate checksum file: {}".format(str(e)))
+                  checksum_file_path = None
+
+          # Download the data file with checksum verification
+          download_file(path, file_name, date_range, folder, checksum_file_path)
+
     current += 1
 
 def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date, end_date, folder, checksum):
@@ -71,7 +104,7 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date,
     end_date = END_DATE
   else:
     end_date = convert_to_date_object(end_date)
-    
+
   print("Found {} symbols".format(num_symbols))
 
   for symbol in symbols:
@@ -81,12 +114,45 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date,
       if current_date >= start_date and current_date <= end_date:
         path = get_path(trading_type, "trades", "daily", symbol)
         file_name = "{}-trades-{}.zip".format(symbol.upper(), date)
-        download_file(path, file_name, date_range, folder)
 
+        checksum_file_path = None
+
+        # If checksum verification is enabled, download checksum file first
         if checksum == 1:
           checksum_path = get_path(trading_type, "trades", "daily", symbol)
           checksum_file_name = "{}-trades-{}.zip.CHECKSUM".format(symbol.upper(), date)
-          download_file(checksum_path, checksum_file_name, date_range, folder)
+
+          # Download checksum file
+          checksum_success = download_file(checksum_path, checksum_file_name, date_range, folder)
+
+          if checksum_success:
+            # Build the full path to the checksum file
+            import os
+            base_path = checksum_path
+            if folder:
+              base_path = os.path.join(folder, base_path)
+            if date_range:
+              date_range_str = date_range.replace(" ", "_")
+              base_path = os.path.join(base_path, date_range_str)
+            from utility import get_destination_dir
+            checksum_file_path = get_destination_dir(os.path.join(base_path, checksum_file_name), folder)
+
+            # Verify checksum file is valid (should contain SHA256 hash)
+            if os.path.exists(checksum_file_path):
+              try:
+                with open(checksum_file_path, 'r') as f:
+                  checksum_content = f.read().strip()
+                  # Basic validation: SHA256 hash should be 64 hex characters
+                  hash_value = checksum_content.split()[0]
+                  if len(hash_value) != 64 or not all(c in '0123456789abcdefABCDEF' for c in hash_value):
+                    print("\nWarning: Checksum file appears to be invalid: {}".format(checksum_file_path))
+                    checksum_file_path = None
+              except Exception as e:
+                print("\nWarning: Failed to validate checksum file: {}".format(str(e)))
+                checksum_file_path = None
+
+        # Download the data file with checksum verification
+        download_file(path, file_name, date_range, folder, checksum_file_path)
 
     current += 1
 
