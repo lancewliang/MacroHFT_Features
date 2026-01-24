@@ -1,10 +1,23 @@
 # 高频交易因子特征处理需求文档
 
-## 一、数据输入
+## 一、数据源说明
+
+### 1.0 数据概览
+- **交易对**: ETHUSDT (以太坊永续合约)
+- **数据类型**: Binance 期货数据
+- **数据时间范围**: 2023年01月01日 - 2026年01月01日 (约3年)
+- **数据粒度**: 分钟级别
+- **存储格式**: ZIP 压缩文件（每日一个文件）
 
 ### 1.1 订单簿深度数据 (Order Book Depth)
-- **文件路径**: `biance_example/bookdepth.csv`
-- **数据格式**:
+- **数据目录**: `data/futures/um/daily/bookDepth/ETHUSDT/`
+- **文件格式**: `ETHUSDT-bookDepth-YYYY-MM-DD.zip`
+  - 示例：`ETHUSDT-bookDepth-2023-06-30.zip`
+- **文件结构**:
+  - 每个 ZIP 文件包含一个 CSV 文件
+  - CSV 文件名格式：`ETHUSDT-bookDepth-YYYY-MM-DD.csv`
+- **示例数据**: `biance_example/bookdepth.csv` (仅供参考)
+- **CSV 数据格式**:
   ```
   timestamp, percentage, depth, notional
   ```
@@ -18,10 +31,17 @@
 - **数据特征**:
   - 每个时间戳对应 10 行数据（5个买档 + 5个卖档）
   - 以分钟为单位进行聚合/采样
+  - 每日数据量：约 14,400 行 (1440分钟 × 10档位)
 
 ### 1.2 K线数据 (Kline/Candlestick)
-- **文件路径**: `biance_example/kline.csv`
-- **数据格式**:
+- **数据目录**: `data/futures/um/daily/klines/ETHUSDT/1m/`
+- **文件格式**: `ETHUSDT-1m-YYYY-MM-DD.zip`
+  - 示例：`ETHUSDT-1m-2023-06-30.zip`
+- **文件结构**:
+  - 每个 ZIP 文件包含一个 CSV 文件
+  - CSV 文件名格式：`ETHUSDT-1m-YYYY-MM-DD.csv`
+- **示例数据**: `biance_example/kline.csv` (仅供参考)
+- **CSV 数据格式**:
   ```
   open_time, open, high, low, close, volume, close_time, quote_volume, count,
   taker_buy_volume, taker_buy_quote_volume, ignore
@@ -42,16 +62,61 @@
 - **数据特征**:
   - 每行代表1分钟的K线数据
   - 一分钟一行
+  - 每日数据量：约 1,440 行 (1440分钟)
+
+### 1.3 数据处理范围
+- **起始日期**: 2023-01-01
+- **结束日期**: 2026-01-01
+- **总天数**: 约 1,096 天 (3年)
+- **预估数据量**:
+  - 订单簿数据：约 1,577万行 (1096天 × 1440分钟 × 10档)
+  - K线数据：约 158万行 (1096天 × 1440分钟)
+  - 最终因子数据：约 158万行 × 62列
 
 ---
 
 ## 二、数据处理流程
 
+### 2.0 数据读取与解压
+**任务**: 从 ZIP 文件中读取每日数据并合并
+
+**处理步骤**:
+1. **遍历日期范围** (2023-01-01 到 2026-01-01)
+2. **订单簿数据读取**:
+   - 构建文件路径：`data/futures/um/daily/bookDepth/ETHUSDT/ETHUSDT-bookDepth-{date}.zip`
+   - 从 ZIP 中读取 CSV 文件（无需解压到磁盘）
+   - 使用 Polars 的 `read_csv()` 直接读取压缩文件
+3. **K线数据读取**:
+   - 构建文件路径：`data/futures/um/daily/klines/ETHUSDT/1m/ETHUSDT-1m-{date}.zip`
+   - 从 ZIP 中读取 CSV 文件
+4. **数据合并策略**:
+   - 选项 A：逐日处理（内存效率高，适合大数据集）
+   - 选项 B：全量读取后处理（速度快，需要更多内存）
+
+**Polars 读取 ZIP 示例**:
+```python
+import polars as pl
+from pathlib import Path
+
+# 方法1：直接读取 ZIP 文件（推荐）
+df = pl.read_csv("data/futures/um/daily/bookDepth/ETHUSDT/ETHUSDT-bookDepth-2023-06-30.zip")
+
+# 方法2：使用 Python zipfile 模块
+import zipfile
+with zipfile.ZipFile(zip_path) as z:
+    with z.open(csv_filename) as f:
+        df = pl.read_csv(f)
+```
+
+**输出**:
+- 订单簿 DataFrame: 包含所有日期的订单簿数据
+- K线 DataFrame: 包含所有日期的K线数据
+
 ### 2.1 订单簿数据预处理
 **任务**: 将订单簿深度数据转换为宽表格式
 
 **输入**:
-- 原始 bookdepth.csv（长格式，每个时间戳10行）
+- 原始 bookdepth 数据（长格式，每个时间戳10行）
 
 **处理步骤**:
 1. 按 `timestamp` 分组
@@ -237,9 +302,14 @@ log_return_wap_2 = log(wap_2[t] / wap_2[t-1])
 **总计**: 1 + 4 + 20 + 9 + 11 + 3 + 3 + 3 + 2 + 6 = **62列**
 
 ### 4.2 输出格式
-- **数据库**: Polars DataFrame
-- **文件格式**: CSV 或 Parquet（推荐 Parquet，更高效）
-- **文件命名**: `features_YYYYMMDD.parquet` 或 `features_YYYYMMDD.csv`
+- **数据框**: Polars DataFrame
+- **文件格式**: Parquet（推荐，高效压缩和查询）
+- **输出目录**: `output/features/`
+- **文件命名策略**:
+  - **单文件输出**: `features_20230101_20260101.parquet` (全量数据)
+  - **分批输出**: `features_YYYYMM.parquet` (按月分割)
+  - 示例：`features_202306.parquet`, `features_202307.parquet`
+- **推荐方案**: 按月分割，便于增量更新和内存管理
 
 ---
 
@@ -257,37 +327,101 @@ log_return_wap_2 = log(wap_2[t] / wap_2[t-1])
 ```python
 import polars as pl
 import numpy as np
+from pathlib import Path
+from datetime import datetime, timedelta
+from typing import List, Tuple
 
-# 1. 数据读取
-def load_bookdepth(file_path: str) -> pl.DataFrame:
-    """读取并预处理订单簿数据"""
+# 1. 数据读取（处理 ZIP 文件）
+def load_daily_bookdepth(date: str, base_path: str = "data/futures/um/daily/bookDepth/ETHUSDT") -> pl.DataFrame:
+    """读取单日订单簿数据（从ZIP文件）
+
+    Args:
+        date: 日期字符串，格式 'YYYY-MM-DD'
+        base_path: 数据目录路径
+
+    Returns:
+        Polars DataFrame
+    """
     pass
 
-def load_kline(file_path: str) -> pl.DataFrame:
-    """读取并预处理K线数据"""
+def load_daily_kline(date: str, base_path: str = "data/futures/um/daily/klines/ETHUSDT/1m") -> pl.DataFrame:
+    """读取单日K线数据（从ZIP文件）
+
+    Args:
+        date: 日期字符串，格式 'YYYY-MM-DD'
+        base_path: 数据目录路径
+
+    Returns:
+        Polars DataFrame
+    """
+    pass
+
+def load_date_range(start_date: str, end_date: str) -> List[pl.DataFrame]:
+    """加载日期范围内的所有数据
+
+    Args:
+        start_date: 起始日期 'YYYY-MM-DD'
+        end_date: 结束日期 'YYYY-MM-DD'
+
+    Returns:
+        (bookdepth_dfs, kline_dfs) 元组
+    """
     pass
 
 # 2. 数据转换
 def pivot_bookdepth(df: pl.DataFrame) -> pl.DataFrame:
-    """将订单簿长格式转为宽格式"""
+    """将订单簿长格式转为宽格式
+
+    输入: timestamp, percentage, depth, notional (长格式)
+    输出: timestamp, bid1_price, bid1_size, ..., ask5_price, ask5_size (宽格式)
+    """
+    pass
+
+def preprocess_kline(df: pl.DataFrame) -> pl.DataFrame:
+    """预处理K线数据，提取需要的列并转换时间戳"""
+    pass
+
+def merge_data(bookdepth_df: pl.DataFrame, kline_df: pl.DataFrame) -> pl.DataFrame:
+    """按时间戳合并订单簿和K线数据"""
     pass
 
 # 3. 因子计算
 def calculate_kline_features(df: pl.DataFrame) -> pl.DataFrame:
-    """计算K线特征因子"""
+    """计算K线特征因子
+
+    计算: kmid, kmid2, klen, kup, kup2, klow, klow2, ksft, ksft2
+    """
     pass
 
 def calculate_orderbook_features(df: pl.DataFrame) -> pl.DataFrame:
-    """计算订单簿特征因子"""
+    """计算订单簿特征因子
+
+    计算: volume, size_n, wap, spreads, volume_imbalance, vwap
+    """
     pass
 
 def calculate_log_returns(df: pl.DataFrame) -> pl.DataFrame:
-    """计算对数收益率因子"""
+    """计算对数收益率因子
+
+    计算: log_return_bid1_price, log_return_ask1_price, log_return_wap_1, etc.
+    """
     pass
 
 # 4. 主函数
-def generate_features(bookdepth_path: str, kline_path: str, output_path: str):
-    """完整的特征生成流程"""
+def generate_features(
+    start_date: str = "2023-01-01",
+    end_date: str = "2026-01-01",
+    output_path: str = "output/features.parquet",
+    batch_size: int = 30  # 每次处理30天
+) -> None:
+    """完整的特征生成流程
+
+    Args:
+        start_date: 起始日期
+        end_date: 结束日期
+        output_path: 输出文件路径
+        batch_size: 批处理大小（天数）
+    """
     pass
 ```
 
