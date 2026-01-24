@@ -364,6 +364,7 @@ day_of_week = timestamp.day_of_week
 - [ ] `main.py`: 主执行脚本
 - [ ] `config.py`: 配置文件（路径、参数等）
 - [ ] `requirements.txt`: 依赖包列表
+- [ ] 代码目录为 src/gen_features
 
 ### 8.2 文档文件
 - [ ] `factor.md`: 因子公式说明（已有）
