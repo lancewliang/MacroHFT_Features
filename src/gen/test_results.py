@@ -170,7 +170,7 @@ class FeatureValidator:
         logger.info("="*60)
 
         null_counts = self.df.null_count()
-        total_nulls = null_counts.sum(axis=1)[0]
+        total_nulls = sum(null_counts.row(0))
 
         # 找出有空值的列
         columns_with_nulls = []
@@ -247,8 +247,9 @@ class FeatureValidator:
             else:
                 logger.info("volume_imbalance 范围检查通过 ✓")
 
-        # 检查价格是否为正
-        price_columns = [col for col in self.df.columns if 'price' in col.lower()]
+        # 检查价格是否为正（排除对数收益率，因为它们可以为负）
+        price_columns = [col for col in self.df.columns
+                        if 'price' in col.lower() and 'log_return' not in col.lower()]
         for col in price_columns:
             negative_count = self.df.filter(pl.col(col) <= 0).shape[0]
             if negative_count > 0:
@@ -374,11 +375,12 @@ class FeatureValidator:
         logger.info("="*60)
 
         report_lines = []
+        from datetime import datetime
         report_lines.append("="*80)
         report_lines.append("特征数据验证报告")
         report_lines.append("="*80)
         report_lines.append(f"文件路径: {self.file_path}")
-        report_lines.append(f"验证时间: {pl.datetime('now')}")
+        report_lines.append(f"验证时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         report_lines.append("")
 
         # 1. 基本信息

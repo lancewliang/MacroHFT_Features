@@ -80,7 +80,8 @@ KLINE_RENAME_MAP = {
     "open": "open_price",
     "high": "high_price",
     "low": "low_price",
-    "close": "close_price"
+    "close": "close_price",
+    "volume": "traded_volume"
 }
 
 # ==================== 因子配置 ====================
@@ -217,6 +218,16 @@ def get_output_filepath(date_str: str = None, month_str: str = None) -> Path:
         filename = f"features_{START_DATE.replace('-', '')}_{END_DATE.replace('-', '')}.{OUTPUT_FORMAT}"
 
     return FEATURES_OUTPUT_DIR / filename
+
+
+def get_feature_columns():
+    """
+    获取所有因子列名
+
+    Returns:
+        List[str]: 所有因子列名列表
+    """
+    return ALL_FEATURES
 
 
 def ensure_directories():
