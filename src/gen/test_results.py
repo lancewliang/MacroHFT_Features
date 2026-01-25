@@ -140,7 +140,7 @@ class FeatureValidator:
         expected_features = get_feature_columns()
         existing_features = [col for col in expected_features if col in self.df.columns]
         missing_features = [col for col in expected_features if col not in self.df.columns]
-
+        logger.info(f"数据前100行: {self.df.head(200)}")
         result = {
             "预期因子数": len(expected_features),
             "实际因子数": len(existing_features),
