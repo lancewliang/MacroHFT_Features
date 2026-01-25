@@ -509,6 +509,7 @@ def find_output_files(output_dir: Path = FEATURES_OUTPUT_DIR) -> List[Path]:
     # 查找所有 parquet、feather 和 csv 文件
     parquet_files = list(output_dir.glob("*.parquet"))
     feather_files = list(output_dir.glob("*.feather"))
+    logger.error(f"输出目录{output_dir}文件: {feather_files}")
     csv_files = list(output_dir.glob("*.csv"))
 
     all_files = parquet_files + feather_files + csv_files
@@ -543,7 +544,8 @@ def main():
 
     elif args.all:
         # 验证所有文件
-        output_dir = Path(args.dir)
+        output_dir = Path("output/features")
+        logger.info(f"目录 {output_dir}")
         files = find_output_files(output_dir)
 
         if not files:
