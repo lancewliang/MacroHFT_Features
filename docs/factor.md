@@ -71,5 +71,13 @@ volume  = bid1_size+bid2_size+bid3_size+bid4_size+bid5_size+ask1_size+ask2_size+
 'log_return_wap_2', = 𝑙𝑜𝑔(wap_2/wap_2【t-1】)
 
 
-
+ask1_price_trend_60,  y==ask1_price ,𝑦trend = 𝑦 − RollingMean(𝑦, 60)/RollingStd(𝑦, 60)
+bid1_price_trend_60,  y==bid1_price ,𝑦trend = 𝑦 − RollingMean(𝑦, 60)/RollingStd(𝑦, 60)
+buy_spread_trend_60,  y==buy_spread ,𝑦trend = 𝑦 − RollingMean(𝑦, 60)/RollingStd(𝑦, 60)
+sell_spread_trend_60, y==sell_spread ,𝑦trend = 𝑦 − RollingMean(𝑦, 60)/RollingStd(𝑦, 60)
+wap_1_trend_60,       y==wap_1 ,𝑦trend = 𝑦 − RollingMean(𝑦, 60)/RollingStd(𝑦, 60)
+wap_2_trend_60,       y==wap_2 ,𝑦trend = 𝑦 − RollingMean(𝑦, 60)/RollingStd(𝑦, 60)
+buy_vwap_trend_60,    y==buy_vwap ,𝑦trend = 𝑦 − RollingMean(𝑦, 60)/RollingStd(𝑦, 60)
+sell_vwap_trend_60,   y==sell_vwap ,𝑦trend = 𝑦 − RollingMean(𝑦, 60)/RollingStd(𝑦, 60)
+volume_trend_60,      y==volume ,𝑦trend = 𝑦 − RollingMean(𝑦, 60)/RollingStd(𝑦, 60)
    

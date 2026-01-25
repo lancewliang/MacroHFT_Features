@@ -284,10 +284,15 @@ def preprocess_kline(df: pl.DataFrame) -> pl.DataFrame:
     # 重命名列
     df = df.rename(KLINE_RENAME_MAP)
 
+    # 保留 close 列（作为 close_price 的副本）
+    df = df.with_columns(
+        pl.col("close_price").alias("close")
+    )
+
     # 选择需要的列
     columns_to_keep = [
         "timestamp",
-        "open_price", "high_price", "low_price", "close_price",
+        "open_price", "high_price", "low_price", "close_price", "close",
         "traded_volume", "taker_buy_volume", "count"
     ]
 
