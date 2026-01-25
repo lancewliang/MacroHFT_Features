@@ -118,6 +118,15 @@ LOG_RETURN_FEATURES = [
     "log_return_wap_1", "log_return_wap_2"
 ]
 
+# 趋势因子
+TREND_FEATURES = [
+    "ask1_price_trend_60", "bid1_price_trend_60",
+    "buy_spread_trend_60", "sell_spread_trend_60",
+    "wap_1_trend_60", "wap_2_trend_60",
+    "buy_vwap_trend_60", "sell_vwap_trend_60",
+    "volume_trend_60"
+]
+
 # 所有因子列表
 ALL_FEATURES = (
     KLINE_FEATURES +
@@ -126,7 +135,8 @@ ALL_FEATURES = (
     SPREAD_FEATURES +
     VOLUME_FEATURES +
     VWAP_FEATURES +
-    LOG_RETURN_FEATURES
+    LOG_RETURN_FEATURES +
+    TREND_FEATURES
 )
 
 # ==================== 数据验证配置 ====================

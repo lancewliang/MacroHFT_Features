@@ -247,9 +247,11 @@ class FeatureValidator:
             else:
                 logger.info("volume_imbalance 范围检查通过 ✓")
 
-        # 检查价格是否为正（排除对数收益率，因为它们可以为负）
+        # 检查价格是否为正（排除对数收益率和趋势因子，因为它们可以为负）
         price_columns = [col for col in self.df.columns
-                        if 'price' in col.lower() and 'log_return' not in col.lower()]
+                        if 'price' in col.lower()
+                        and 'log_return' not in col.lower()
+                        and 'trend' not in col.lower()]
         for col in price_columns:
             negative_count = self.df.filter(pl.col(col) <= 0).shape[0]
             if negative_count > 0:

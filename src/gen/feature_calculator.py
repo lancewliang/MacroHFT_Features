@@ -333,6 +333,66 @@ def calculate_log_return_features(df: pl.DataFrame) -> pl.DataFrame:
     return df
 
 
+# ==================== 趋势因子 ====================
+def calculate_trend_features(df: pl.DataFrame, window: int = 60) -> pl.DataFrame:
+    """
+    计算趋势因子 (标准化趋势)
+
+    公式: y_trend = (y - RollingMean(y, window)) / RollingStd(y, window)
+
+    因子列表:
+    - ask1_price_trend_60
+    - bid1_price_trend_60
+    - buy_spread_trend_60
+    - sell_spread_trend_60
+    - wap_1_trend_60
+    - wap_2_trend_60
+    - buy_vwap_trend_60
+    - sell_vwap_trend_60
+    - volume_trend_60
+
+    注意：前 window 行数据会有 null 值（滚动窗口不足）
+
+    Args:
+        df: 包含基础因子的数据框
+        window: 滚动窗口大小，默认60
+
+    Returns:
+        添加了趋势因子的数据框
+    """
+    logger.info(f"开始计算趋势因子 (window={window})")
+
+    # 需要计算趋势的列
+    base_columns = [
+        "ask1_price",
+        "bid1_price",
+        "buy_spread",
+        "sell_spread",
+        "wap_1",
+        "wap_2",
+        "buy_vwap",
+        "sell_vwap",
+        "volume"
+    ]
+
+    trend_exprs = []
+    for col in base_columns:
+        # 计算滚动均值和标准差
+        rolling_mean = pl.col(col).rolling_mean(window_size=window)
+        rolling_std = pl.col(col).rolling_std(window_size=window)
+
+        # 计算趋势因子: (y - rolling_mean) / rolling_std
+        trend = ((pl.col(col) - rolling_mean) / rolling_std).alias(f"{col}_trend_{window}")
+        trend_exprs.append(trend)
+
+    df = df.with_columns(trend_exprs)
+
+    logger.info("趋势因子计算完成")
+    logger.warning(f"注意：前 {window} 行的趋势因子可能为 null（滚动窗口不足）")
+
+    return df
+
+
 # ==================== 主计算函数 ====================
 def calculate_all_features(df: pl.DataFrame) -> pl.DataFrame:
     """
@@ -346,6 +406,7 @@ def calculate_all_features(df: pl.DataFrame) -> pl.DataFrame:
     5. 成交量因子
     6. VWAP因子
     7. 对数收益率因子
+    8. 趋势因子
 
     Args:
         df: 合并后的原始数据（包含K线和订单簿数据）
@@ -380,6 +441,9 @@ def calculate_all_features(df: pl.DataFrame) -> pl.DataFrame:
 
     # 7. 对数收益率因子
     df = calculate_log_return_features(df)
+
+    # 8. 趋势因子
+    df = calculate_trend_features(df)
 
     final_rows = len(df)
     final_cols = len(df.columns)
@@ -425,7 +489,14 @@ def get_feature_columns() -> List[str]:
         # 对数收益率因子
         "log_return_bid1_price", "log_return_bid2_price",
         "log_return_ask1_price", "log_return_ask2_price",
-        "log_return_wap_1", "log_return_wap_2"
+        "log_return_wap_1", "log_return_wap_2",
+
+        # 趋势因子
+        "ask1_price_trend_60", "bid1_price_trend_60",
+        "buy_spread_trend_60", "sell_spread_trend_60",
+        "wap_1_trend_60", "wap_2_trend_60",
+        "buy_vwap_trend_60", "sell_vwap_trend_60",
+        "volume_trend_60"
     ]
 
 
