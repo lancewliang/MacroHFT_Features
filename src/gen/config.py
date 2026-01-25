@@ -48,7 +48,7 @@ OUTPUT_STRATEGY = "single"  # 可选: "single" (单文件) 或 "monthly" (按月
 
 # ==================== 处理参数配置 ====================
 # 批处理大小（天数）
-BATCH_SIZE_DAYS = 30
+BATCH_SIZE_DAYS = 120
 
 # 是否使用懒加载
 USE_LAZY_LOADING = True
