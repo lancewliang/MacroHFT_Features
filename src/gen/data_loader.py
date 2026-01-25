@@ -213,6 +213,12 @@ def pivot_bookdepth(df: pl.DataFrame) -> pl.DataFrame:
     """
     logger.info("开始转换订单簿格式（长格式 -> 宽格式）")
 
+    # 转换 timestamp 为 datetime 类型（如果是字符串）
+    if df["timestamp"].dtype == pl.Utf8:
+        df = df.with_columns(
+            pl.col("timestamp").str.strptime(pl.Datetime, "%Y-%m-%d %H:%M:%S")
+        )
+
     # 先计算价格：price = notional / depth
     df = df.with_columns(
         (pl.col("notional") / pl.col("depth")).alias("price")
@@ -255,7 +261,32 @@ def pivot_bookdepth(df: pl.DataFrame) -> pl.DataFrame:
     # 按时间戳排序
     result = result.sort("timestamp")
 
-    logger.info(f"订单簿格式转换完成，行数: {len(result)}")
+    # 只保留每分钟最接近准点的数据
+    # 策略：对每分钟分组，选择秒数最小的那一条
+    original_rows = len(result)
+
+    # 添加辅助列：分钟级别的时间戳（去掉秒数）
+    result = result.with_columns([
+        pl.col("timestamp").dt.truncate("1m").alias("minute"),
+        pl.col("timestamp").dt.second().alias("second")
+    ])
+
+    # 对每分钟分组，选择秒数最小的那一条
+    result = (
+        result
+        .sort(["minute", "second"])  # 按分钟和秒数排序
+        .group_by("minute")
+        .first()  # 每组取第一条（秒数最小）
+        .drop(["minute", "second"])  # 删除辅助列
+        .sort("timestamp")
+    )
+
+    filtered_rows = len(result)
+
+    logger.info(f"订单簿格式转换完成，行数: {original_rows} -> {filtered_rows} (每分钟保留1条)")
+    if original_rows > filtered_rows:
+        logger.info(f"过滤掉同分钟的重复数据: {original_rows - filtered_rows} 行")
+
     return result
 
 
