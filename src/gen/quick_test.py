@@ -148,11 +148,26 @@ def quick_test(test_date: str = "2023-06-30"):
 
         # 保存测试结果
         ensure_directories()
-        output_path = Path("output/test_output.parquet")
+        from config import OUTPUT_FORMAT
+
+        # 根据配置的格式保存文件
+        if OUTPUT_FORMAT == "feather":
+            output_path = Path("output/features/test_output.feather")
+        elif OUTPUT_FORMAT == "parquet":
+            output_path = Path("output/features/test_output.parquet")
+        else:
+            output_path = Path("output/features/test_output.csv")
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"\n保存测试结果到: {output_path}")
-        features_df.write_parquet(output_path)
+        if OUTPUT_FORMAT == "parquet":
+            features_df.write_parquet(output_path)
+        elif OUTPUT_FORMAT == "feather":
+            features_df.write_ipc(output_path)
+        else:
+            features_df.write_csv(output_path)
+
         file_size = output_path.stat().st_size / (1024 * 1024)
         logger.info(f"✓ 文件已保存 ({file_size:.2f} MB)")
 

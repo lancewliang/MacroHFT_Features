@@ -123,6 +123,8 @@ def process_batch(
 
         if OUTPUT_FORMAT == "parquet":
             features_df.write_parquet(output_path)
+        elif OUTPUT_FORMAT == "feather":
+            features_df.write_ipc(output_path)
         else:
             features_df.write_csv(output_path)
 
@@ -267,6 +269,8 @@ def generate_features_single_file(
 
     if OUTPUT_FORMAT == "parquet":
         final_df.write_parquet(output_path)
+    elif OUTPUT_FORMAT == "feather":
+        final_df.write_ipc(output_path)
     else:
         final_df.write_csv(output_path)
 

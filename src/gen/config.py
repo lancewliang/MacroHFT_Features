@@ -41,7 +41,7 @@ KLINE_FILENAME_TEMPLATE = "{symbol}-{timeframe}-{date}.zip"
 FEATURES_OUTPUT_DIR = OUTPUT_ROOT / "features"
 
 # 输出文件格式
-OUTPUT_FORMAT = "parquet"  # 可选: "parquet" 或 "csv"
+OUTPUT_FORMAT = "feather"  # 可选: "parquet", "feather" 或 "csv"
 
 # 输出文件命名策略
 OUTPUT_STRATEGY = "monthly"  # 可选: "single" (单文件) 或 "monthly" (按月分割)

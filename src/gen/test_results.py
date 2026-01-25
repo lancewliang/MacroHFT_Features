@@ -55,6 +55,8 @@ class FeatureValidator:
             # 根据文件格式加载
             if self.file_path.suffix == ".parquet":
                 self.df = pl.read_parquet(self.file_path)
+            elif self.file_path.suffix == ".feather":
+                self.df = pl.read_ipc(self.file_path)
             elif self.file_path.suffix == ".csv":
                 self.df = pl.read_csv(self.file_path)
             else:
@@ -202,6 +204,11 @@ class FeatureValidator:
             log_return_cols = [col for col in columns_with_nulls if 'log_return' in col['列名']]
             if log_return_cols:
                 logger.info("注意: 对数收益率因子第一行空值是正常的")
+
+            # 趋势因子前N行有空值是正常的（滚动窗口）
+            trend_cols = [col for col in columns_with_nulls if 'trend' in col['列名']]
+            if trend_cols:
+                logger.info("注意: 趋势因子前60行空值是正常的（滚动窗口大小为60）")
 
         self.validation_results['null_values'] = result
         return result
@@ -499,11 +506,12 @@ def find_output_files(output_dir: Path = FEATURES_OUTPUT_DIR) -> List[Path]:
         logger.error(f"输出目录不存在: {output_dir}")
         return []
 
-    # 查找所有 parquet 和 csv 文件
+    # 查找所有 parquet、feather 和 csv 文件
     parquet_files = list(output_dir.glob("*.parquet"))
+    feather_files = list(output_dir.glob("*.feather"))
     csv_files = list(output_dir.glob("*.csv"))
 
-    all_files = parquet_files + csv_files
+    all_files = parquet_files + feather_files + csv_files
     all_files.sort()
 
     return all_files
