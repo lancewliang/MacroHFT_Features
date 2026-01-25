@@ -138,6 +138,14 @@ def quick_test(test_date: str = "2023-06-30"):
                 logger.info(f"  均值={mean_val:.6f}, 标准差={std_val:.6f}")
                 logger.info(f"  范围=[{min_val:.6f}, {max_val:.6f}]")
 
+        # 打印所有因子名字
+        logger.info("\n所有因子列表:")
+        logger.info("-"*60)
+        feature_columns = [col for col in features_df.columns if col not in ['time', 'timestamp']]
+        for i, feat in enumerate(feature_columns, 1):
+            logger.info(f"  {i:2d}. {feat}")
+        logger.info(f"\n总计: {len(feature_columns)} 个因子")
+
         # 保存测试结果
         ensure_directories()
         output_path = Path("output/test_output.parquet")

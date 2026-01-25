@@ -288,7 +288,7 @@ def preprocess_kline(df: pl.DataFrame) -> pl.DataFrame:
     columns_to_keep = [
         "timestamp",
         "open_price", "high_price", "low_price", "close_price",
-        "volume", "taker_buy_volume", "count"
+        "traded_volume", "taker_buy_volume", "count"
     ]
 
     df = df.select(columns_to_keep)
