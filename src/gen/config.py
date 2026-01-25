@@ -48,7 +48,7 @@ OUTPUT_STRATEGY = "single"  # 可选: "single" (单文件) 或 "monthly" (按月
 
 # ==================== 处理参数配置 ====================
 # 批处理大小（天数）
-BATCH_SIZE_DAYS = 120
+BATCH_SIZE_DAYS = 600
 
 # 是否使用懒加载
 USE_LAZY_LOADING = True
@@ -207,7 +207,10 @@ def get_kline_filepath(date_str: str) -> Path:
     return KLINE_BASE_PATH / filename
 
 
-def get_output_filepath(date_str: str = None, month_str: str = None) -> Path:
+def get_output_filepath(date_str: str = None, month_str: str = None,
+                            start_date: str = None,
+                        end_date: str = None,
+                        ) -> Path:
     """
     获取输出文件路径
 
@@ -225,7 +228,7 @@ def get_output_filepath(date_str: str = None, month_str: str = None) -> Path:
     elif date_str:
         filename = f"features_{date_str.replace('-', '')}.{OUTPUT_FORMAT}"
     else:
-        filename = f"features_{START_DATE.replace('-', '')}_{END_DATE.replace('-', '')}.{OUTPUT_FORMAT}"
+        filename = f"features_{start_date.replace('-', '')}_{end_date.replace('-', '')}.{OUTPUT_FORMAT}"
 
     return FEATURES_OUTPUT_DIR / filename
 

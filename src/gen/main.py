@@ -264,7 +264,7 @@ def generate_features_single_file(
     final_df = pl.concat(batch_dfs)
 
     # 保存最终结果
-    output_path = get_output_filepath()
+    output_path = get_output_filepath(start_date=start_date, end_date=end_date)
     logger.info(f"保存最终结果到: {output_path}")
 
     if OUTPUT_FORMAT == "parquet":
