@@ -44,7 +44,7 @@ FEATURES_OUTPUT_DIR = OUTPUT_ROOT / "features"
 OUTPUT_FORMAT = "feather"  # 可选: "parquet", "feather" 或 "csv"
 
 # 输出文件命名策略
-OUTPUT_STRATEGY = "monthly"  # 可选: "single" (单文件) 或 "monthly" (按月分割)
+OUTPUT_STRATEGY = "single"  # 可选: "single" (单文件) 或 "monthly" (按月分割)
 
 # ==================== 处理参数配置 ====================
 # 批处理大小（天数）
