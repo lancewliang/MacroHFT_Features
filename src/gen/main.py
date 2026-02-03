@@ -117,6 +117,13 @@ def process_batch(
         logger.info("步骤 5/5: 计算所有因子")
         features_df = calculate_all_features(merged_df)
 
+        # 删除包含 nan 值的行（由周期性因子导致）
+        rows_before = len(features_df)
+        features_df = features_df.drop_nulls()
+        rows_after = len(features_df)
+        if rows_before > rows_after:
+            logger.info(f"删除了 {rows_before - rows_after} 行包含 NaN 的数据")
+
         # 6. 保存结果
         logger.info(f"保存结果到: {output_path}")
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -246,6 +253,13 @@ def generate_features_single_file(
             kline_processed = preprocess_kline(kline_df)
             merged_df = merge_data(bookdepth_wide, kline_processed)
             features_df = calculate_all_features(merged_df)
+
+            # 删除包含 nan 值的行（由周期性因子导致）
+            rows_before = len(features_df)
+            features_df = features_df.drop_nulls()
+            rows_after = len(features_df)
+            if rows_before > rows_after:
+                logger.info(f"批次 {batch_num} 删除了 {rows_before - rows_after} 行包含 NaN 的数据")
 
             batch_dfs.append(features_df)
 

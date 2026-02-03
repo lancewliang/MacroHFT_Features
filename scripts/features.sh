@@ -1,2 +1,2 @@
 cd src/gen
-python main.py --start-date 2024-01-01 --end-date 2024-12-31
+python main.py --start-date 2023-01-01 --end-date 2025-12-31
